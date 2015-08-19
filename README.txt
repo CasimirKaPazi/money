@@ -7,19 +7,7 @@ Commands for players (requires "money" privilege) :
 /money — gets the balance of your account
 /money pay <account> <amount> — transfers <amount> money to <account>
 
-Commands for administrators (requires "money_admin" privilege) :
-/money <account> — gets balance of <account>
-/money set <account> <amount> — sets balance of <account> in <amount> money
-/money inc <account> <amount> — increases <amount> money to balance of <account>
-/money dec <account> <amount> — decreases <amount> money from balance of <account>
-/money take <account> <amount> — takes off <amount> money from balance of <account>
-
-Also, this mod adds 2 kinds of shops:
-- Simple shop
-- Admin shop (no recipe)
-
-This can be found in:
-  https://github.com/kotolegokot/minetest-mod-money
+Also a simple shop
 
 License of source code
 -----------------------------

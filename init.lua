@@ -62,10 +62,6 @@ minetest.register_on_leaveplayer(function(player)
 end)
 
 minetest.register_privilege("money", "Can use /money [pay <account> <amount>] command")
-minetest.register_privilege("money_admin", {
-	description = "Can use /money <account> | take/set/inc/dec <account> <amount>",
-	give_to_singleplayer = false,
-})
 
 minetest.register_chatcommand("money", {
 	privs = {money=true},
@@ -90,8 +86,8 @@ minetest.register_chatcommand("money", {
 			end
 			return true
 		end
-		if param1 and param2 and param3 then --/money pay/take/set/inc/dec <account> <amount>
-			if param1 == "pay" or param1 == "take" or param1 == "set" or param1 == "inc" or param1 == "dec" then
+		if param1 and param2 and param3 then --/money pay/ <account> <amount>
+			if param1 == "pay" then
 				if exist(param2) then
 					if tonumber(param3) then
 						if tonumber(param3) >= 0 then
@@ -106,33 +102,6 @@ minetest.register_chatcommand("money", {
 									minetest.chat_send_player(name, "You don't have " .. CURRENCY_PREFIX .. param3 - get_money(name) .. CURRENCY_POSTFIX .. ".")
 								end
 								return true
-							end
-							if minetest.get_player_privs(name)["money_admin"] then
-								if param1 == "take" then
-									if get_money(param2) >= param3 then
-										set_money(param2, get_money(param2) - param3)
-										set_money(name, get_money(name) + param3)
-										minetest.chat_send_player(param2, name .. " took your " .. CURRENCY_PREFIX .. param3 .. CURRENCY_POSTFIX .. ".")
-										minetest.chat_send_player(name, "You took " .. param2 .. "'s " .. CURRENCY_PREFIX .. param3 .. CURRENCY_POSTFIX .. ".")
-									else
-										minetest.chat_send_player(name, "Player named \""..param2.."\" do not have enough " .. CURRENCY_PREFIX .. param3 - get_money(player) .. CURRENCY_POSTFIX .. ".")
-									end
-								elseif param1 == "set" then
-									set_money(param2, param3)
-									minetest.chat_send_player(name, param2 .. " " .. CURRENCY_PREFIX .. param3 .. CURRENCY_POSTFIX)
-								elseif param1 == "inc" then
-									set_money(param2, get_money(param2) + param3)
-									minetest.chat_send_player(name, param2 .. " " .. CURRENCY_PREFIX .. get_money(param2) .. CURRENCY_POSTFIX)
-								elseif param1 == "dec" then
-									if get_money(param2) >= param3 then
-										set_money(param2, get_money(param2) - param3)
-										minetest.chat_send_player(name, param2 .. " " .. CURRENCY_PREFIX .. get_money(param2) .. CURRENCY_POSTFIX)
-									else
-										minetest.chat_send_player(name, "Player named \""..param2.."\" don't have enough " .. CURRENCY_PREFIX .. param3 - get_money(player) .. CURRENCY_POSTFIX .. ".")
-									end
-								end
-							else
-								minetest.chat_send_player(name, "You don't have permission to run this command (missing privilege: money_admin)")
 							end
 						else
 							minetest.chat_send_player(name, "You must specify a positive amount.")
@@ -167,7 +136,7 @@ minetest.register_node("money:shop", {
 	end,
 	on_construct = function(pos)
 		local meta = minetest.get_meta(pos)
-		meta:set_string("formspec", "size[6,5]"..default.gui_bg..default.gui_bg_img..
+		meta:set_string("formspec", "size[6,5]"..
 			"field[0.256,0.5;6,1;shopname;Name of your shop;]"..
 			"label[-0.025,1.03;Trade Type]"..
 			"dropdown[-0.025,1.45;2.5,1;action;Sell,Buy,Buy and Sell;]"..
@@ -343,112 +312,4 @@ minetest.register_craft({
 		{"default:wood", "default:mese", "default:wood"},
 		{"default:wood", "default:wood", "default:wood"},
 	},
-})
-
---Admin shop.
-minetest.register_node("money:admin_shop", {
-	description = "Admin Shop",
-	tiles = {"admin_shop.png"},
-	groups = {snappy=2,choppy=2,oddly_breakable_by_hand=2},
-	sounds = default.node_sound_wood_defaults(),
-	paramtype2 = "facedir",
-	on_construct = function(pos)
-		local meta = minetest.get_meta(pos)
-		meta:set_string("infotext", "Untuned Admin Shop")
-		meta:set_string("formspec", "size[6,3.75]"..default.gui_bg..default.gui_bg_img..
-			"label[-0.025,-0.2;Trade Type]"..
-			"dropdown[-0.025,0.25;2.5,1;action;Sell,Buy,Buy and Sell;]"..
-			"field[2.7,0.48;3.55,1;amount;Trade lot quantity (1-99);]"..
-			"field[0.256,1.65;5.2,1;nodename;Node name to trade (eg. default:mese);]"..
-			"item_image[5,1.25;1,1;default:diamond]" ..
-			"field[0.256,2.75;3,1;costbuy;Buying price (per lot);]"..
-			"field[3.25,2.75;3,1;costsell;Selling price (per lot);]"..
-			"button_exit[2,3.25;2,1;button;Proceed]")
-		meta:set_string("form", "yes")
-	end,
-	can_dig = function(pos,player)
-		return minetest.get_player_privs(player:get_player_name())["money_admin"]
-	end,
-	on_receive_fields = function(pos, formname, fields, sender)
-		local meta = minetest.get_meta(pos)
-		if meta:get_string("form") == "yes" then
-			if minetest.registered_items[fields.nodename] and tonumber(fields.amount) and tonumber(fields.amount) >= 1 and tonumber(fields.amount) <= 99 and (meta:get_string("owner") == sender:get_player_name() or minetest.get_player_privs(sender:get_player_name())["money_admin"]) then
-				if fields.action == "Sell" then
-					if not tonumber(fields.costbuy) then
-						return
-					end
-					if not (tonumber(fields.costbuy) >= 0) then
-						return
-					end
-				end
-				if fields.action == "Buy" then
-					if not tonumber(fields.costsell) then
-						return
-					end
-					if not (tonumber(fields.costsell) >= 0) then
-						return
-					end
-				end
-				if fields.action == "Buy and Sell" then
-					if not tonumber(fields.costbuy) then
-						return
-					end
-					if not (tonumber(fields.costbuy) >= 0) then
-						return
-					end
-					if not tonumber(fields.costsell) then
-						return
-					end
-					if not (tonumber(fields.costsell) >= 0) then
-						return
-					end
-				end
-				local s, ss
-				if fields.action == "Sell" then
-					s = " sell "
-					ss = "button[1,0.5;2,1;buttonsell;Sell("..fields.costbuy..")]"
-				elseif fields.action == "Buy" then
-					s = " buy "
-					ss = "button[1,0.5;2,1;buttonbuy;Buy("..fields.costsell..")]"
-				else
-					s = " buy and sell "
-					ss = "button[1,0.5;2,1;buttonbuy;Buy("..fields.costsell..")]" .. "button[5,0.5;2,1;buttonsell;Sell("..fields.costbuy..")]"
-				end
-				local meta = minetest.get_meta(pos)
-				meta:set_string("formspec", "size[8,5.5;]"..default.gui_bg..default.gui_bg_img..
-					"label[0.256,0;You can"..s..fields.amount.." "..fields.nodename.."]"..
-					ss..
-					"list[current_player;main;0,1.5;8,4;]")
-				meta:set_string("nodename", fields.nodename)
-				meta:set_string("amount", fields.amount)
-				meta:set_string("costbuy", fields.costsell)
-				meta:set_string("costsell", fields.costbuy)
-				meta:set_string("infotext", "Admin Shop")
-				meta:set_string("form", "no")
-			end
-		elseif fields["buttonbuy"] then
-			local sender_name = sender:get_player_name()
-			local sender_inv = sender:get_inventory()
-			if not sender_inv:room_for_item("main", meta:get_string("nodename") .. " " .. meta:get_string("amount")) then
-				minetest.chat_send_player(sender_name, "In your inventory is not enough space.")
-			return true
-			elseif get_money(sender_name) - tonumber(meta:get_string("costbuy")) < 0 then
-				minetest.chat_send_player(sender_name, "You do not have enough money.")
-			return true
-			end
-			set_money(sender_name, get_money(sender_name) - meta:get_string("costbuy"))
-			sender_inv:add_item("main", meta:get_string("nodename") .. " " .. meta:get_string("amount"))
-			minetest.chat_send_player(sender_name, "You bought " .. meta:get_string("amount") .. " " .. meta:get_string("nodename") .. " at a price of " .. CURRENCY_PREFIX .. meta:get_string("costbuy") .. CURRENCY_POSTFIX .. ".")
-		elseif fields["buttonsell"] then
-			local sender_name = sender:get_player_name()
-			local sender_inv = sender:get_inventory()
-			if not sender_inv:contains_item("main", meta:get_string("nodename") .. " " .. meta:get_string("amount")) then
-				minetest.chat_send_player(sender_name, "You don't have enough product.")
-				return true
-			end
-			set_money(sender_name, get_money(sender_name) + meta:get_string("costsell"))
-			sender_inv:remove_item("main", meta:get_string("nodename") .. " " .. meta:get_string("amount"))
-			minetest.chat_send_player(sender_name, "You sold " .. meta:get_string("amount") .. " " .. meta:get_string("nodename") .. " at a price of " .. CURRENCY_PREFIX .. meta:get_string("costsell") .. CURRENCY_POSTFIX .. ".")
-		end
-	end,
 })
