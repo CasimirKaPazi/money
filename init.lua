@@ -42,16 +42,7 @@ local exist = money.exist
 minetest.register_on_joinplayer(function(player)
 	local name = player:get_player_name()
 	if not exist(name) then
-		local input = io.open(minetest.get_worldpath() .. "/money_" .. name .. ".txt") --For compatible with old versions.
-		if input then
-			local n = input:read("*n")
-			io.close(input)
-			accounts[name] = {money = n}
-			os.remove(minetest.get_worldpath() .. "/money_" .. name .. ".txt")
-			save_accounts()
-		else
-			accounts[name] = {money = INITIAL_MONEY}
-		end
+		accounts[name] = {money = INITIAL_MONEY}
 	end
 	money.hud_add(name)
 end)
@@ -61,61 +52,43 @@ minetest.register_on_leaveplayer(function(player)
 	money.hud[name] = nil
 end)
 
-minetest.register_privilege("money", "Can use /money [pay <account> <amount>] command")
+minetest.register_privilege("money", "Can use /money [<account> <amount>] command")
 
 minetest.register_chatcommand("money", {
 	privs = {money=true},
-	params = "[<account> | pay/take/set/inc/dec <account> <amount>]",
-	description = "Operations with money",
+	params = "[<account> <amount>]",
+	description = "Send money",
 	func = function(name, param)
 		if param == "" then --/money
 			minetest.chat_send_player(name, "My money account : " .. CURRENCY_PREFIX .. get_money(name) .. CURRENCY_POSTFIX)
 			return true
 		end
 		local m = string.split(param, " ")
-		local param1, param2, param3 = m[1], m[2], m[3]
-		if param1 and not param2 then --/money <account>
-			if minetest.get_player_privs(name)["money_admin"] then
-				if exist(param1) then
-					minetest.chat_send_player(name, "Account of player '" .. param1 .. "' : " .. CURRENCY_PREFIX .. get_money(param1) .. CURRENCY_POSTFIX)
-				else
-					minetest.chat_send_player(name, "\"" .. param1 .. "\" account don't exist.")
-				end
-			else
-				minetest.chat_send_player(name, "You don't have permission to run this command (missing privilege: money_admin)")
-			end
-			return true
+		local param1, param2 = m[1], m[2]
+		param2 = tonumber(param2)
+		-- Various checks
+		if not param1 or not param2 then --/money <account> <amount>
+			minetest.chat_send_player(name, "Invalid parameters (see /help money)")
+			return false
 		end
-		if param1 and param2 and param3 then --/money pay/ <account> <amount>
-			if param1 == "pay" then
-				if exist(param2) then
-					if tonumber(param3) then
-						if tonumber(param3) >= 0 then
-							param3 = tonumber(param3)
-							if param1 == "pay" then
-								if get_money(name) >= param3 then
-									set_money(param2, get_money(param2) + param3)
-									set_money(name, get_money(name) - param3)
-									minetest.chat_send_player(param2, name .. " sent you " .. CURRENCY_PREFIX .. param3 .. CURRENCY_POSTFIX .. ".")
-									minetest.chat_send_player(name, param2 .. " took your " .. CURRENCY_PREFIX .. param3 .. CURRENCY_POSTFIX .. ".")
-								else
-									minetest.chat_send_player(name, "You don't have " .. CURRENCY_PREFIX .. param3 - get_money(name) .. CURRENCY_POSTFIX .. ".")
-								end
-								return true
-							end
-						else
-							minetest.chat_send_player(name, "You must specify a positive amount.")
-						end
-					else
-						minetest.chat_send_player(name, "The amount must be a number.")
-					end
-				else
-					minetest.chat_send_player(name, "\"" .. param2 .. "\" account don't exist.")
-				end
-				return true
-			end
+		if not exist(param1) then
+			minetest.chat_send_player(name, "\"" .. param1 .. "\" account don't exist.")
+			return false
 		end
-		minetest.chat_send_player(name, "Invalid parameters (see /help money)")
+		if param2 <= 0 then
+			minetest.chat_send_player(name, "The amount must be a positive number.")
+			return false
+		end
+		if get_money(name) < param2 then
+			minetest.chat_send_player(name, "You don't have " .. CURRENCY_PREFIX .. param2 - get_money(name) .. CURRENCY_POSTFIX .. ".")
+			return false
+		end
+		-- Send the amount
+			set_money(param1, get_money(param1) + param2)
+			set_money(name, get_money(name) - param2)
+			minetest.chat_send_player(param1, name .. " sent you " .. CURRENCY_PREFIX .. param2 .. CURRENCY_POSTFIX .. ".")
+			minetest.chat_send_player(name, param1 .. " took your " .. CURRENCY_PREFIX .. param2 .. CURRENCY_POSTFIX .. ".")
+		return true
 	end,
 })
 
