@@ -7,6 +7,7 @@ money = {}
 
 dofile(minetest.get_modpath("money") .. "/settings.txt") -- Loading settings.
 dofile(minetest.get_modpath("money") .. "/hud.lua") -- Account display in HUD.
+dofile(minetest.get_modpath("money") .. "/shop.lua") -- Account display in HUD.
 
 local accounts = {}
 local input = io.open(minetest.get_worldpath() .. "/accounts", "r")
