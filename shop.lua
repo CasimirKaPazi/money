@@ -122,7 +122,7 @@ minetest.register_node("money:shop", {
 					ss = "button[1,4.5;2,1;buttonbuy;Buy("..fields.costsell..")]" .. "button[5,4.5;2,1;buttonsell;Sell("..fields.costbuy..")]"
 				end
 				local meta = minetest.get_meta(pos)
-				meta:set_string("formspec", "size[8,9.35;]"..default.gui_bg..default.gui_bg_img..
+				meta:set_string("formspec", "size[8,9.35;]"..
 					"list[context;main;0,0;8,4;]"..
 					"label[1.5,4;You can"..s..fields.amount.." "..fields.nodename.."]"..
 						ss..
