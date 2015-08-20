@@ -146,15 +146,15 @@ minetest.register_node("money:shop", {
 			elseif not sender_inv:room_for_item("main", meta:get_string("nodename") .. " " .. meta:get_string("amount")) then
 				minetest.chat_send_player(sender_name, "Not enough space in your inventory.")
 				return true
-			elseif get_money(sender_name) - tonumber(meta:get_string("costsell")) < 0 then
+			elseif money.get_money(sender_name) - tonumber(meta:get_string("costsell")) < 0 then
 				minetest.chat_send_player(sender_name, "You don't have enough money.")
 				return true
-			elseif not exist(meta:get_string("owner")) then
-				minetest.chat_send_player(sender_name, "The owner's account does not currently exist; try again later.")
+			elseif not money.exist(meta:get_string("owner")) then
+				minetest.chat_send_player(sender_name, "The owner's account does not currently money.exist; try again later.")
 				return true
 			end
-			set_money(sender_name, get_money(sender_name) - meta:get_string("costsell"))
-			set_money(meta:get_string("owner"), get_money(meta:get_string("owner")) + meta:get_string("costsell"))
+			money.set_money(sender_name, money.get_money(sender_name) - meta:get_string("costsell"))
+			money.set_money(meta:get_string("owner"), money.get_money(meta:get_string("owner")) + meta:get_string("costsell"))
 			sender_inv:add_item("main", meta:get_string("nodename") .. " " .. meta:get_string("amount"))
 			inv:remove_item("main", meta:get_string("nodename") .. " " .. meta:get_string("amount"))
 			minetest.chat_send_player(sender_name, "You bought " .. meta:get_string("amount") .. " " .. meta:get_string("nodename") .. " at a price of " .. CURRENCY_PREFIX .. meta:get_string("costsell") .. CURRENCY_POSTFIX .. ".")
@@ -168,15 +168,15 @@ minetest.register_node("money:shop", {
 			elseif not inv:room_for_item("main", meta:get_string("nodename") .. " " .. meta:get_string("amount")) then
 				minetest.chat_send_player(sender_name, "Not enough space in the shop.")
 				return true
-			elseif get_money(meta:get_string("owner")) - meta:get_string("costbuy") < 0 then
+			elseif money.get_money(meta:get_string("owner")) - meta:get_string("costbuy") < 0 then
 				minetest.chat_send_player(sender_name, "The buyer is not enough money.")
 				return true
-			elseif not exist(meta:get_string("owner")) then
-				minetest.chat_send_player(sender_name, "The owner's account does not currently exist; try again later.")
+			elseif not money.exist(meta:get_string("owner")) then
+				minetest.chat_send_player(sender_name, "The owner's account does not currently money.exist; try again later.")
 				return true
 			end
-			set_money(sender_name, get_money(sender_name) + meta:get_string("costbuy"))
-			set_money(meta:get_string("owner"), get_money(meta:get_string("owner")) - meta:get_string("costbuy"))
+			money.set_money(sender_name, money.get_money(sender_name) + meta:get_string("costbuy"))
+			money.set_money(meta:get_string("owner"), money.get_money(meta:get_string("owner")) - meta:get_string("costbuy"))
 			sender_inv:remove_item("main", meta:get_string("nodename") .. " " .. meta:get_string("amount"))
 			inv:add_item("main", meta:get_string("nodename") .. " " .. meta:get_string("amount"))
 			minetest.chat_send_player(sender_name, "You sold " .. meta:get_string("amount") .. " " .. meta:get_string("nodename") .. " at a price of " .. CURRENCY_PREFIX .. meta:get_string("costbuy") .. CURRENCY_POSTFIX .. ".")
